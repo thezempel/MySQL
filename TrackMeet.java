@@ -1,7 +1,4 @@
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Scanner;
 
 
@@ -11,7 +8,7 @@ public class TrackMeet {
     private	static String port     = "3306";
     private static String database = "dbzempeltrack";
     private static String user     = "root";
-    private static String password = "";
+    private static String password = "Waffles*1159";
     private static String flags = "?noAccessToProcedureBodies=true";
 
     public static int menu() {
@@ -134,24 +131,138 @@ public class TrackMeet {
 
     }
 
-    public static void getResult() {
+    public static void getResult() throws Exception{
 
+        Class.forName("com.mysql.jdbc.Driver");
+
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://"
+                    + hostname + "/" + database + flags, user, password);
+
+            Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            boolean gotResults = stmt.execute("SELECT * from events");
+
+            ResultSet rs = stmt.getResultSet(); //get a "Result Set"
+            rs.first();                        //go to first record in the result set
+
+            while (gotResults) {
+                int compId = rs.getInt("athleteId");
+                String event = rs.getString("eventName");
+                String score = rs.getString("score");
+                String place = String.valueOf(rs.getDate("place"));
+                boolean dq = rs.getBoolean("dq");
+                System.out.println("| place | athlete |  event  | score |");
+                System.out.println("====================================");
+                System.out.println(place + "      " + compId + "        " + event + "  " + score + "     " + dq);
+                gotResults = rs.next();
+            }
+
+        } catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+            ex.printStackTrace();
+        }
     }
 
-    public static void scoreEvent() {
+    public static void scoreEvent() throws Exception{
+        Scanner scan = new Scanner (System.in);
+        Class.forName("com.mysql.jdbc.Driver");
+        int eventId, place, compId, i = 1, score = 10;
+        System.out.println("Enter event ID: ");
+        eventId = scan.nextInt();
+
+        while (i <= 6) {
+            System.out.println("Enter competitors ID for each Place");
+            if (i == 1)
+                System.out.println(i + "st Place: ");
+            else if (i == 2)
+                System.out.println(i + "nd Place: ");
+            else if (i == 3)
+                System.out.println(i + "rd Place: ");
+            else if (i == 4|| i == 5 || i == 6)
+                System.out.println(i + "th Place: ");
+
+            compId = scan.nextInt();
+            place = i;
+            try {
+                Connection conn = DriverManager.getConnection("jdbc:mysql://"
+                        + hostname + "/" + database + flags, user, password);
+                CallableStatement cStmt = conn.prepareCall("UPDATE events SET " +
+                                                            "athleteId = (?), place = (?), score = (?)" +
+                                                            " WHERE eventId = (?)");
+                cStmt.setInt(1, compId);
+                cStmt.setInt(2, place);
+                cStmt.setInt(3, score);
+                cStmt.setInt(4, eventId);
+                cStmt.execute();
+
+
+
+            }
+            catch (SQLException ex) {
+                System.out.println("SQLException: " + ex.getMessage());
+                System.out.println("SQLState: " + ex.getSQLState());
+                System.out.println("VendorError: " + ex.getErrorCode());
+                ex.printStackTrace();
+            }
+            i++;
+            score -=2;
+            if (score == 0) score = 1;
+        }
+        System.out.println("Event has been scored \n");
 
     }
 
     public static void dqEvent() {
+        Scanner scan = new Scanner(System.in);
+        int compId;
+        System.out.println("Enter competitor ID: ");
+        compId = scan.nextInt();
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://"
+                    + hostname + "/" + database + flags, user, password);
+            CallableStatement cStmt = conn.prepareCall("INSERT INTO results (athleteId, dq) values (?, ?)");
+            cStmt.setInt(1, compId);
+            cStmt.setBoolean(2, true);
+            cStmt.execute();
 
+            System.out.println("Competitor has been disqualified");
+
+        }
+        catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+            ex.printStackTrace();
+        }
     }
 
     public static void dqMeet() {
+        Scanner scan = new Scanner(System.in);
+        int compId;
+        System.out.println("Enter competitor ID: ");
+        compId = scan.nextInt();
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://"
+                    + hostname + "/" + database + flags, user, password);
+            CallableStatement cStmt = conn.prepareCall("DELETE FROM events WHERE athleteId = (?)");
+            cStmt.setInt(1, compId);
+            cStmt.execute();
 
+            System.out.println("Competitor has been removed from the meet");
+
+        }
+        catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+            ex.printStackTrace();
+        }
     }
 
     public static void scoreMeet() {
-
+        
     }
 
     public static void main(String[] args) throws Exception {
