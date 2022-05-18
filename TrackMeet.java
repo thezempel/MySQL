@@ -8,7 +8,7 @@ public class TrackMeet {
     private	static String port     = "3306";
     private static String database = "dbzempeltrack";
     private static String user     = "root";
-    private static String password = "Waffles*1159";
+    private static String password = "";
     private static String flags = "?noAccessToProcedureBodies=true";
 
     public static int menu() {
@@ -101,6 +101,7 @@ public class TrackMeet {
 
     public static void addResult() throws Exception {
         Scanner scan = new Scanner(System.in);
+        Class.forName("com.mysql.jdbc.Driver");
         int compId, eventId, result;
         System.out.println("Enter the competitor's number: ");
         compId = scan.nextInt();
@@ -214,8 +215,9 @@ public class TrackMeet {
 
     }
 
-    public static void dqEvent() {
+    public static void dqEvent() throws Exception{
         Scanner scan = new Scanner(System.in);
+        Class.forName("com.mysql.jdbc.Driver");
         int compId;
         System.out.println("Enter competitor ID: ");
         compId = scan.nextInt();
@@ -250,7 +252,7 @@ public class TrackMeet {
             cStmt.setInt(1, compId);
             cStmt.execute();
 
-            System.out.println("Competitor has been removed from the meet");
+
 
         }
         catch (SQLException ex) {
@@ -259,10 +261,40 @@ public class TrackMeet {
             System.out.println("VendorError: " + ex.getErrorCode());
             ex.printStackTrace();
         }
+        System.out.println("Competitor has been removed from the meet");
     }
 
-    public static void scoreMeet() {
-        
+    public static void scoreMeet() throws Exception {
+        Class.forName("com.mysql.jdbc.Driver");
+        int i = 1;
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://"
+                    + hostname + "/" + database + flags, user, password);
+
+            Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            boolean gotResults = stmt.execute("SELECT schoolName, score FROM school ORDER BY score DESC");
+
+            ResultSet rs = stmt.getResultSet(); //get a "Result Set"
+            rs.first();                        //go to first record in the result set
+
+            while (i <= 3) {
+                int score = rs.getInt("score");
+                String schoolName = rs.getString("schoolName");
+                boolean dq = rs.getBoolean("dq");
+                System.out.println("| place |   school   |  score  |");
+                System.out.println("================================");
+                System.out.println(i + "      " + schoolName  + score);
+                i++;
+            }
+
+
+        }
+        catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+            ex.printStackTrace();
+        }
     }
 
     public static void main(String[] args) throws Exception {
