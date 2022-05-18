@@ -11,7 +11,7 @@ public class TrackMeet {
     private	static String port     = "3306";
     private static String database = "dbzempeltrack";
     private static String user     = "root";
-    private static String password = "Waffles*1159";
+    private static String password = "";
     private static String flags = "?noAccessToProcedureBodies=true";
 
     public static int menu() {
@@ -57,6 +57,7 @@ public class TrackMeet {
                 break;
             case 8:
                 System.out.println("goodbye");
+                break;
         }
     }
 
@@ -101,7 +102,35 @@ public class TrackMeet {
 
     }
 
-    public static void addResult() {
+    public static void addResult() throws Exception {
+        Scanner scan = new Scanner(System.in);
+        int compId, eventId, result;
+        System.out.println("Enter the competitor's number: ");
+        compId = scan.nextInt();
+        System.out.println("Enter the event's ID: ");
+        eventId = scan.nextInt();
+        System.out.println("Enter the competitor's result: ");
+        result = scan.nextInt();
+        Class.forName("com.mysql.jdbc.Driver");
+
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://"
+                    + hostname + "/" + database + flags, user, password);
+            CallableStatement cStmt = conn.prepareCall("INSERT INTO results values (?, ?, ?)");
+            cStmt.setInt(1, compId);
+            cStmt.setInt(2, eventId);
+            cStmt.setInt(3, result);
+            cStmt.execute();
+
+            System.out.println("Result has been added");
+
+        }
+        catch (SQLException ex) {
+            System.out.println("SQLException: " + ex.getMessage());
+            System.out.println("SQLState: " + ex.getSQLState());
+            System.out.println("VendorError: " + ex.getErrorCode());
+            ex.printStackTrace();
+        }
 
     }
 
